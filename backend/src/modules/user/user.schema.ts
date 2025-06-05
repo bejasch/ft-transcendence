@@ -1,104 +1,156 @@
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
-import { apiError, apiSuccess } from "../../core/api/api.schema.ts";
+import { apiError, apiSuccess, userSchema } from "@darrenkuro/pong-core";
 
-const registerBodySchema = z
-    .object({
-        username: z.string().min(3, { message: "Username must be at least 3 characters long" }),
-        displayName: z
-            .string()
-            .min(3, { message: "Display name must be at least 3 characters long" }),
-        password: z.string().min(8, { message: "Password must be at least 8 characters long" }),
-        confirmPassword: z
-            .string()
-            .min(8, { message: "Confirm password must be at least 8 characters long" }),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-        path: ["confirmPassword"],
-        message: "Passwords do not match",
-    });
-
-const loginBodySchema = z.object({
-    username: z.string().min(3, { message: "Username is required" }),
-    password: z.string().min(8, { message: "Password is required" }),
-});
-
-const leaderboardParamsSchema = z.object({
-    n: z.coerce.number().int().gt(0),
-});
-
-const PublicUserSchema = z.object({
-    id: z.number(),
-    username: z.string(),
-    displayName: z.string(),
-    avatarUrl: z.string().url(),
-    wins: z.number(),
-    losses: z.number(),
-    createdAt: z.string().datetime(),
-});
-
-const LoginResponseSchema = z.object({
-    token: z.string(),
-});
-
-/** Schemas for swagger UI */
-const registerRouteSchema = {
+const register = {
     tags: ["User"],
     description: "Register a new user",
-    body: zodToJsonSchema(registerBodySchema),
+    body: zodToJsonSchema(userSchema.registerBody),
     response: {
-        201: zodToJsonSchema(apiSuccess(LoginResponseSchema)),
-        400: zodToJsonSchema(apiError("VALIDATION_ERROR")),
+        201: zodToJsonSchema(apiSuccess(userSchema.loginPayload)),
+        400: zodToJsonSchema(
+            z.union([
+                apiError("VALIDATION_ERROR"),
+                apiError("USERNAME_REQUIRED"),
+                apiError("USERNAME_TOO_SHORT"),
+                apiError("DISPLAY_NAME_REQUIRED"),
+                apiError("DISPLAY_NAME_TOO_SHORT"),
+                apiError("PASSWORD_REQUIRED"),
+                apiError("PASSWORD_TOO_SHORT"),
+                apiError("PASSWORD_MATCH_ERROR"),
+            ])
+        ),
         409: zodToJsonSchema(apiError("USERNAME_TAKEN")),
-        500: zodToJsonSchema(apiError("INTERNAL_SERVER_ERROR")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
     },
 };
 
-const loginRouteSchema = {
+const login = {
     tags: ["User"],
     description: "Login an user",
-    body: zodToJsonSchema(loginBodySchema),
+    body: zodToJsonSchema(userSchema.loginBody),
     response: {
-        201: zodToJsonSchema(apiSuccess(LoginResponseSchema)),
-        400: zodToJsonSchema(apiError("VALIDATION_ERROR")),
-        401: zodToJsonSchema(apiError("UNAUTHORIZED")),
-        404: zodToJsonSchema(apiError("NOT_FOUND")),
-        500: zodToJsonSchema(apiError("INTERNAL_SERVER_ERROR")),
+        200: zodToJsonSchema(apiSuccess(userSchema.loginPayload)),
+        400: zodToJsonSchema(
+            z.union([
+                apiError("VALIDATION_ERROR"),
+                apiError("USERNAME_REQUIRED"),
+                apiError("PASSWORD_REQUIRED"),
+                apiError("TOKEN_LENGTH_ERROR"),
+            ])
+        ),
+        401: zodToJsonSchema(z.union([apiError("PASSWORD_INVALID"), apiError("TOKEN_INVALID")])),
+        404: zodToJsonSchema(apiError("USER_NOT_FOUND")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
     },
 };
 
-const getMeRouteSchema = {
+const logout = {
+    tags: ["User"],
+    description: "Logout an user (clear cookies)",
+    security: [{ cookieAuth: [] }],
+    response: {
+        200: zodToJsonSchema(apiSuccess(z.object({}))),
+        401: zodToJsonSchema(apiError("UNAUTHORIZED")),
+    },
+};
+
+const displayname = {
+    tags: ["User"],
+    description: "Logout an user (clear cookies)",
+    security: [{ cookieAuth: [] }],
+    response: {
+        200: zodToJsonSchema(apiSuccess(z.object({}))),
+        400: zodToJsonSchema(
+            z.union([
+                apiError("VALIDATION_ERROR"),
+                apiError("DISPLAY_NAME_REQUIRED"),
+                apiError("DISPLAY_NAME_TOO_SHORT"),
+            ])
+        ),
+        401: zodToJsonSchema(apiError("UNAUTHORIZED")),
+        404: zodToJsonSchema(apiError("USER_NOT_FOUND")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
+    },
+};
+
+const password = {
+    tags: ["User"],
+    description: "Change password of a user",
+    security: [{ cookieAuth: [] }],
+    response: {
+        200: zodToJsonSchema(apiSuccess(z.object({}))),
+        400: zodToJsonSchema(
+            z.union([
+                apiError("VALIDATION_ERROR"),
+                apiError("PASSWORD_REQUIRED"),
+                apiError("PASSWORD_TOO_SHORT"),
+                apiError("PASSWORD_MATCH_ERROR"),
+            ])
+        ),
+        401: zodToJsonSchema(apiError("UNAUTHORIZED")),
+        404: zodToJsonSchema(apiError("USER_NOT_FOUND")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
+    },
+};
+
+const info = {
+    tags: ["User"],
+    description: "Get user info by username",
+    response: {
+        200: zodToJsonSchema(apiSuccess(userSchema.getInfoPayload)),
+        400: zodToJsonSchema(
+            z.union([apiError("VALIDATION_ERROR"), apiError("USERNAME_REQUIRED")])
+        ),
+        404: zodToJsonSchema(apiError("USER_NOT_FOUND")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
+    },
+};
+
+const me = {
     tags: ["User"],
     description: "Get current user info",
-    security: [{ bearerAuth: [] }],
+    security: [{ cookieAuth: [] }],
     response: {
-        200: zodToJsonSchema(apiSuccess(PublicUserSchema)),
+        200: zodToJsonSchema(apiSuccess(userSchema.getMePayload)),
         401: zodToJsonSchema(apiError("UNAUTHORIZED")),
-        500: zodToJsonSchema(apiError("INTERNAL_SERVER_ERROR")),
+        404: zodToJsonSchema(apiError("USER_NOT_FOUND")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
     },
 };
 
-const getLeaderboardRouteSchema = {
+const leaderboard = {
     tags: ["User"],
     description: "Get top n users by wins",
-    params: zodToJsonSchema(leaderboardParamsSchema),
+    params: zodToJsonSchema(userSchema.leaderboardParams),
     response: {
-        200: zodToJsonSchema(apiSuccess(PublicUserSchema.array())),
+        200: zodToJsonSchema(apiSuccess(userSchema.leaderboardPayload)),
         400: zodToJsonSchema(apiError("VALIDATION_ERROR")),
-        500: zodToJsonSchema(apiError("INTERNAL_SERVER_ERROR")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
     },
 };
 
-export default {
-    registerBody: registerBodySchema,
-    loginBody: loginBodySchema,
-    leaderboardParams: leaderboardParamsSchema,
-    loginResponse: LoginResponseSchema,
-    publicUser: PublicUserSchema,
-    routes: {
-        register: registerRouteSchema,
-        login: loginRouteSchema,
-        me: getMeRouteSchema,
-        leaderboard: getLeaderboardRouteSchema,
+const avatar = {
+    tags: ["User"],
+    description: "Upload user avatar",
+    security: [{ cookieAuth: [] }],
+    response: {
+        200: zodToJsonSchema(apiSuccess(userSchema.avatarPayload)),
+        400: zodToJsonSchema(apiError("VALIDATION_ERROR")),
+        401: zodToJsonSchema(apiError("UNAUTHORIZED")),
+        404: zodToJsonSchema(apiError("USER_NOT_FOUND")),
+        500: zodToJsonSchema(apiError("SERVER_ERROR")),
     },
+};
+
+export const routeSchema = {
+    register,
+    login,
+    logout,
+    displayname,
+    password,
+    leaderboard,
+    info,
+    me,
+    avatar,
 };

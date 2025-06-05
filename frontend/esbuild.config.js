@@ -1,5 +1,5 @@
-import * as esbuild from "esbuild";
 import chokidar from "chokidar";
+import * as esbuild from "esbuild";
 import fse from "fs-extra";
 import * as path from "path";
 
@@ -8,6 +8,7 @@ const watch = process.argv.includes("--watch");
 
 const context = await esbuild.context({
     entryPoints: ["src/scripts/index.ts"],
+    format: "esm",
     bundle: true,
     outfile: "dist/bundle.js",
     minify: isProd, // Minify in production
@@ -15,6 +16,7 @@ const context = await esbuild.context({
     define: {
         "process.env.WATCH": JSON.stringify(watch ? "1" : "0"),
         "process.env.NODE_ENV": JSON.stringify(isProd ? "production" : "development"),
+        "process.env.LIVE_RELOAD_PORT": JSON.stringify(process.env.LIVE_RELOAD_PORT ?? 35729),
     },
 });
 

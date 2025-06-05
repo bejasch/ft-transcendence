@@ -13,11 +13,12 @@ RUN addgroup caddy
 RUN adduser -h /frontend/ -S caddy -G caddy
 
 FROM alpine:3.21.3
+USER 0
 
-COPY --from=builder      /usr/bin/caddy /usr/bin/caddy
-COPY --from=builder      /etc/passwd /etc/passwd
-COPY --from=builder      /etc/group /etc/group
-COPY --chown=caddy:caddy ./Caddyfile /etc/caddy/Caddyfile
+COPY --from=builder --chmod=555 /usr/bin/caddy /usr/bin/caddy
+COPY --from=builder             /etc/passwd /etc/passwd
+COPY --from=builder             /etc/group /etc/group
+COPY --chown=caddy:caddy        ./Caddyfile /etc/caddy/Caddyfile
 
 RUN rm -rf /frontend/ && mkdir -p /frontend/.local/share/caddy/
 
@@ -28,13 +29,10 @@ WORKDIR /frontend/
 EXPOSE 8080
 EXPOSE 8443
 
-VOLUME ["/frontend/.local/share/caddy/", "/frontend/dist/", "/frontend/src/public/"]
+VOLUME ["/frontend/.local/share/caddy/", "/frontend/dist/", "/frontend/uploads/"]
 
-USER caddy
+COPY --chmod=555 ./healthcheck.sh /healthcheck.sh
 
-ENV WATCH 0
+HEALTHCHECK --interval=10s --timeout=2s --retries=3 --start-period=30s --start-interval=1s CMD ["/healthcheck.sh"]
 
-CMD /usr/bin/caddy run  \
-	--watch=$WATCH      \
-	--adapter caddyfile \
-	--config /etc/caddy/Caddyfile
+CMD ["sh", "-c", "/usr/bin/caddy run --watch=$WATCH --adapter caddyfile --config /etc/caddy/Caddyfile"]

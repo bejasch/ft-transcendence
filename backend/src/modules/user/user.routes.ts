@@ -1,46 +1,48 @@
-import type { FastifyPluginAsync } from "fastify";
-import handlers from "./user.controller.ts";
+import type { FastifyInstance } from "fastify";
+import { userSchema } from "@darrenkuro/pong-core";
 import { withZod } from "../../utils/zod-validate.ts";
-import schemas from "./user.schema.ts";
+import { createUserController } from "./user.controller.ts";
+import { routeSchema } from "./user.schema.ts";
 
-const userRoutes: FastifyPluginAsync = async (app) => {
+export const userRoutes = async (app: FastifyInstance) => {
+    const { register, login, logout, displayname, password, leaderboard, info, me, avatar } =
+        createUserController(app);
+
+    const { registerBody, loginBody, displayNameBody, passwordBody } = userSchema;
+    const { leaderboardParams, infoParams } = userSchema;
+
+    // Register routes
     app.post(
         "/register",
-        { schema: schemas.routes.register },
-        withZod({ body: schemas.registerBody }, handlers.register)
+        { schema: routeSchema.register },
+        withZod({ body: registerBody }, register)
+    );
+
+    app.post("/login", { schema: routeSchema.login }, withZod({ body: loginBody }, login));
+
+    app.post("/logout", { preHandler: [app.requireAuth], schema: routeSchema.logout }, logout);
+
+    app.post(
+        "/displayname",
+        { preHandler: [app.requireAuth] },
+        withZod({ body: displayNameBody, schema: routeSchema.displayname }, displayname)
     );
 
     app.post(
-        "/login",
-        { schema: schemas.routes.login },
-        withZod({ body: schemas.loginBody }, handlers.login)
+        "/password",
+        { preHandler: [app.requireAuth], schema: routeSchema.password },
+        withZod({ body: passwordBody }, password)
     );
-
-    app.get("/me", { preHandler: [app.requireAuth], schema: schemas.routes.me }, handlers.me);
 
     app.get(
         "/leaderboard/:n",
-        { schema: schemas.routes.leaderboard },
-        withZod({ params: schemas.leaderboardParams }, handlers.leaderboard)
+        { schema: routeSchema.leaderboard },
+        withZod({ params: leaderboardParams }, leaderboard)
     );
 
-    // These endpoints are acutally stupid, controller should be used for more direct things for frontend
-    // app.get(
-    //     "/id/:id",
-    //     getUserByIdRouteSchema,
-    //     withZod({ params: userIdSchema }, getUserByIdHandler)
-    // );
-    // app.get(
-    //     "/username/:username",
-    //     withZod({ params: userNameSchema }, getUserByUsernameHandler)
-    // );
-    // app.put(
-    //     "/:id",
-    //     withZod(
-    //         { params: userIdSchema, body: updateUserSchema, header: authenticationSchema },
-    //         updateUserHandler
-    //     )
-    // );
-};
+    app.get("/info/:username", { schema: routeSchema.info }, withZod({ params: infoParams }, info));
 
-export default userRoutes;
+    app.get("/me", { preHandler: [app.requireAuth], schema: routeSchema.me }, me);
+
+    app.post("/avatar", { preHandler: [app.requireAuth], schema: routeSchema.avatar }, avatar);
+};

@@ -1,0 +1,23 @@
+# Server settings
+server.basePath: /kibana
+#server.publicBaseUrl: http://localhost:8080/kibana
+server.rewriteBasePath: false
+server.name: ${KIBANA_HOSTNAME}
+server.host: "${KIBANA_HOST}"
+server.port: ${KIBANA_PORT}
+server.ssl.enabled: false
+
+# Elasticsearch connection
+elasticsearch.hosts: ["https://elasticsearch:${ELASTICSEARCH_PORT}"]
+elasticsearch.requestTimeout: 30000
+elasticsearch.username: "${KIBANA_USER}"
+elasticsearch.password: "${KIBANA_PASSWORD}"
+
+# Monitoring
+monitoring.ui.container.elasticsearch.enabled: true
+monitoring.ui.container.logstash.enabled: true
+
+# Security settings
+xpack.encryptedSavedObjects.encryptionKey: "${XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY}"
+xpack.security.encryptionKey: "${XPACK_SECURITY_ENCRYPTIONKEY}"
+xpack.reporting.encryptionKey: "${XPACK_REPORTING_ENCRYPTIONKEY}"

@@ -1,5 +1,5 @@
 import { test } from "tap";
-import buildApp from "../../../utils/app.ts";
+import { buildApp } from "../../../utils/app.ts";
 
 test("GET /docs and /docs/ returns swagger docs", async (t) => {
     const tryBuild = await buildApp({ logger: false });
@@ -7,9 +7,8 @@ test("GET /docs and /docs/ returns swagger docs", async (t) => {
         return t.fail("Failed to build app");
     }
 
-    t.teardown(() => app.close());
-
     const app = tryBuild.value;
+    t.teardown(() => app.close());
 
     const resDocs = await app.inject({
         method: "GET",

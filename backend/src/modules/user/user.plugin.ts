@@ -1,15 +1,15 @@
 import type { FastifyInstance } from "fastify";
-import { createUserService } from "./user.service.ts";
-import userRoutes from "./user.routes.ts";
 import fp from "fastify-plugin";
+import { userRoutes } from "./user.routes.ts";
+import { createUserService } from "./user.service.ts";
 
-const userPlugin = async (app: FastifyInstance) => {
+const plugin = async (app: FastifyInstance) => {
     app.decorate("userService", createUserService(app));
 
     await app.register(userRoutes, { prefix: "/user" });
 };
 
-export default fp(userPlugin, {
+export const userPlugin = fp(plugin, {
     name: "user-plugin",
     dependencies: ["db-plugin", "auth-plugin"],
 });

@@ -1,15 +1,19 @@
 import type { FastifyInstance } from "fastify";
-import { createGameService } from "./game.service.ts";
-import gameRoutes from "./game.routes.ts";
 import fp from "fastify-plugin";
+import { createGameController } from "./game.controller.ts";
+import { createGameService } from "./game.service.ts";
 
-const gamePlugin = async (app: FastifyInstance) => {
+const plugin = async (app: FastifyInstance) => {
     app.decorate("gameService", createGameService(app));
 
-    await app.register(gameRoutes, { prefix: "/game" });
+    const { start, action, ready } = createGameController(app);
+
+    app.wsService.registerHandler("game-start", start);
+    app.wsService.registerHandler("game-action", action);
+    app.wsService.registerHandler("renderer-ready", ready);
 };
 
-export default fp(gamePlugin, {
+export const gamePlugin = fp(plugin, {
     name: "game-plugin",
-    dependencies: ["db-plugin", "auth-plugin"],
+    dependencies: ["db-plugin", "ws-plugin"],
 });

@@ -1,6 +1,6 @@
-import type { FastifyRequest, FastifyReply } from "fastify";
-import { z, ZodError, ZodTypeAny } from "zod";
-import { ApiError } from "./errors.ts";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import { ZodTypeAny, z } from "zod";
+import { ErrorCode, errorCodeEnum } from "@darrenkuro/pong-core";
 
 type ZodTarget = "body" | "query" | "params" | "headers";
 type SchemaMap = Partial<Record<ZodTarget, ZodTypeAny>>;
@@ -9,11 +9,13 @@ type InferSchemaMap<S extends SchemaMap> = {
     [K in keyof S]: S[K] extends ZodTypeAny ? z.infer<S[K]> : never;
 };
 
-type ZodHandler<S extends SchemaMap> = (
+export type ZodHandler<S extends SchemaMap> = (
     data: InferSchemaMap<S>,
     req: FastifyRequest,
     reply: FastifyReply
-) => Promise<void>;
+) => void | Promise<void>;
+
+const isValidError = (v: unknown): v is ErrorCode => errorCodeEnum.safeParse(v).success;
 
 /**
  * Middleware to validate data for the request (params, body, query, headers) using Zod.
@@ -27,22 +29,24 @@ export const withZod =
     async (req: FastifyRequest, reply: FastifyReply) => {
         const parsed: Partial<Record<keyof Schemas, unknown>> = {};
 
-        const summarizeZodError = (error: ZodError): string => {
-            if (error.issues.length === 0) return "Validation failed";
-
-            return error.issues.map((i) => i.message).join("; ");
-        };
-
         for (const key of Object.keys(schemas) as (keyof Schemas)[]) {
             const schema = schemas[key] as ZodTypeAny;
-            const result = schema.safeParse(req[key as ZodTarget]);
+            const data = req[key as ZodTarget];
 
-            if (!result.success) {
-                const err = new ApiError("VALIDATION_ERROR", 400, summarizeZodError(result.error));
-                return err.send(reply);
+            // Handle when field doesn't exist at all, should never happen
+            if (!data) return reply.err("VALIDATION_ERROR");
+
+            const res = schema.safeParse(data);
+
+            if (!res.success) {
+                // Only return the first issue
+                const msg = res.error.issues[0].message;
+
+                // Potential extra fields due to strict
+                return reply.err(isValidError(msg) ? msg : "VALIDATION_ERROR");
             }
 
-            parsed[key] = result.data;
+            parsed[key] = res.data;
         }
 
         return cb(parsed as InferSchemaMap<Schemas>, req, reply);

@@ -1,0 +1,48 @@
+# Double Quote Exceptions
+.githooks/pre-commit:           #printf "\033[33m%s\033[m\n" \
+.githooks/pre-commit:           #       "Not enforcing. This warning will turn into an error in the future."
+frontend/src/scripts/modules/game/game.controller.ts:        // need new logic, maybe add "quit" to differentiate
+frontend/README.md:│  │  ├─ renderer.ts       // ⚒️  Basically the "class" of entire babylonjs engine
+frontend/tsconfig.json:        "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables "allowSyntheticDefaultImports" for type compatibility. */,
+vault/README.md:    #valid identifiers (e.g. the case for "bootstrap.memory_lock=true" in elk). Bash passes them through, which
+vault/README.md:    # Don't forget the `"\$@"` at the end to pass arguments!
+vault/README.md:    # CMD ["/usr/local/bin/foo-init.sh"]
+vault/README.md:    # HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=60s --start-interval=1s CMD ["curl", "--fail", "http://foo:4242/"]
+vault/config.hcl.template:#api_addr      = "http://127.0.0.1:${VAULT_API_PORT}"
+backend/src/modules/lobby/lobby.schema.ts:        // 401: zodToJsonSchema(apiError("UNAUTHORIZED")),
+backend/src/utils/logger.ts:                            //formatLine: (obj: any) => JSON.stringify(obj) + "\n",
+.githooks/pre-commit:	[ "$#" -lt 1 ] && die "format_staged function expects at least 1 extension as an argument"
+script/format_all:	[ "$#" -lt 1 ] && die "format_all function expects at least 1 extension as an argument"
+frontend/src/scripts/modules/game/objects/objects.paddle.ts:    // const paddleMaterial3 = new StandardMaterial("paddleMat3", babylon.scene);
+frontend/src/styles/styles.css:/*@import "tailwindcss";*/
+vault/replace_json_templates.py:#   "foo": "{{digit:16}}"
+vault/replace_json_templates.py:#   "foo": "2819465738296500"
+cli/src/GameRendering.ts:    // frameBuffer += "\x1b[43m"; // Set background color to green
+cli/src/index.ts:        // console.error("Failed to start remote game!");
+cli/src/utils.ts:// // Utility to convert "x: ..., y: ..., z: ..." → Vec2D using x and z
+cli/src/WebSocketManager.ts:            // console.log("Connected to the server");
+cli/tsconfig.json:        // "target": "ES2020",
+
+# Backtick exceptions
+cli/src/audio.ts:                //     console.warn(`"aplay" exited with code ${code}`);
+cli/src/audio.ts:                //     console.warn(`"aplay" was terminated by signal ${signal}`);
+cli/src/index.ts:            // const serverUrl = `ws://localhost:8080/ws?token=${token}`;
+cli/src/WebSocketManager.ts:        // console.log(`[SEND] ${response}`);
+
+# Other exceptions
+vault/README.md:    # `env` will exec itself, so that's fine as well.
+vault/README.md:    # which is also why we have extra qoutes around this: '"\$@"'
+./vault/README.md:    # `env` will exec itself, so that's fine as well.
+./vault/README.md:    # which is also why we have extra qoutes around this: '"\$@"'
+elk/kibana/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+elk/elasticsearch/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+elk/logstash/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+frontend/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+vault/README.md:    # eval printf '"%s\\n"' "\$env_params"
+caddy/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+./frontend/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+./elk/kibana/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+./elk/logstash/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+./elk/elasticsearch/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+./caddy/entrypoint.sh:# eval printf '"%s\n"' "$env_params"
+./vault/README.md:    # eval printf '"%s\\n"' "\$env_params"
